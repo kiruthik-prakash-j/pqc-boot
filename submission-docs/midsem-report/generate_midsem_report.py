@@ -5,44 +5,54 @@ Course: BITS ZG628T Dissertation | BITS Pilani
 Author: Kiruthik Prakash J (2024HT01586)
 
 Strict Academic Formatting Rules:
-  - Font Size: Minimum 12 pt across all body text, tables, captions, TOC, and lists.
-  - Headings: Proper MS Word Heading 1 (16 pt bold) and Heading 2 (14 pt bold).
-  - Table of Contents: Formal Heading with tab stops and typographic dot leaders.
-  - Pagination: Every major section (x.) and every subtopic (x.x) starts on a NEW PAGE.
-  - Tables: Styled headers (repeated across pages), no split rows, padded cells, 12 pt text.
+  - Single Title/Cover Page (Page 1) with official BITS Pilani seal/logo.
+  - Certificate (Page 2) with formal supervisor and candidate signature blocks.
+  - Table of Contents (Page 3) with dynamic Word TOC field and updated page numbers.
+  - Lists of Figures & Tables (Page 3) with right-aligned margin tab stops.
+  - Main headings (x.) start on a FRESH PAGE.
+  - Subheadings (x.x) flow naturally on the SAME PAGE within their section.
+  - Font Size: Strict minimum of 12 pt across all body text, tables, captions, TOC, and lists.
+  - Section 3: Table 1 placed cleanly under heading to fit entire 14-row table on Page 10.
+  - Section 5.2: Dissertation Plan of Work table placed cleanly on Page 15 without awkward breaks.
+  - Robust XML tables: cantSplit, tblHeader, padded cell margins.
 """
 
 import os
 import sys
+import io
+import base64
+import html
 import docx
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
+
+BITS_LOGO_BASE64 = "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"
 
 def set_cell_background(cell, fill_hex):
     tcPr = cell._element.get_or_add_tcPr()
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
     tcPr.append(shd)
 
-def set_cell_margins(cell, top=80, bottom=80, left=120, right=120):
+def set_cell_margins(cell, top=70, bottom=70, left=100, right=100):
     tcPr = cell._element.get_or_add_tcPr()
-    tcMar = parse_xml(f'''
+    tcMar = parse_xml(f"""
         <w:tcMar {nsdecls("w")}>
             <w:top w:w="{top}" w:type="dxa"/>
             <w:bottom w:w="{bottom}" w:type="dxa"/>
             <w:left w:w="{left}" w:type="dxa"/>
             <w:right w:w="{right}" w:type="dxa"/>
         </w:tcMar>
-    ''')
+    """)
     tcPr.append(tcMar)
 
 def set_table_borders(table, color="B0B0B0", sz="4", val="single"):
     tblPr = table._element.xpath('w:tblPr')
     if tblPr:
-        borders = parse_xml(f'''
+        borders = parse_xml(f"""
             <w:tblBorders {nsdecls("w")}>
                 <w:top w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>
                 <w:bottom w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>
@@ -51,7 +61,7 @@ def set_table_borders(table, color="B0B0B0", sz="4", val="single"):
                 <w:left w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>
                 <w:right w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>
             </w:tblBorders>
-        ''')
+        """)
         tblPr[0].append(borders)
 
 def make_table_robust(table):
@@ -71,18 +81,15 @@ def add_fld_page_number(run):
     run._r.append(fldChar2)
     run._r.append(fldChar3)
 
-def add_toc_line(p, title, page_num, is_major=False, indent=0):
-    p.paragraph_format.space_before = Pt(4 if is_major else 2)
-    p.paragraph_format.space_after = Pt(3)
+def add_list_toc_line(p, title, page_num):
+    p.paragraph_format.space_before = Pt(1.5)
+    p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
-    if indent > 0:
-        p.paragraph_format.left_indent = Inches(indent)
 
-    # Set right-aligned tab stop with dot leader at margin (pos = 8640 dxa = 6.0 inches)
     pPr = p._element.get_or_add_pPr()
     tabs = parse_xml(r'''
         <w:tabs %s>
-            <w:tab w:val="right" w:leader="dot" w:pos="8640"/>
+            <w:tab w:val="right" w:leader="none" w:pos="8640"/>
         </w:tabs>
     ''' % nsdecls('w'))
     pPr.append(tabs)
@@ -90,7 +97,6 @@ def add_toc_line(p, title, page_num, is_major=False, indent=0):
     run_t = p.add_run(title)
     run_t.font.name = 'Arial'
     run_t.font.size = Pt(12)
-    run_t.font.bold = is_major
 
     run_tab = p.add_run('\t')
     run_tab.font.name = 'Arial'
@@ -99,9 +105,75 @@ def add_toc_line(p, title, page_num, is_major=False, indent=0):
     run_p = p.add_run(str(page_num))
     run_p.font.name = 'Arial'
     run_p.font.size = Pt(12)
-    run_p.font.bold = is_major
 
-def build_midsem_report():
+def generate_toc_sdt(entries):
+    paragraphs = []
+    for i, (title, page, is_major, indent) in enumerate(entries):
+        fld_begin = ""
+        fld_end = ""
+        if i == 0:
+            fld_begin = '<w:r><w:fldChar w:fldCharType="begin"/><w:instrText xml:space="preserve"> TOC \\h \\u \\z \\t "Heading 1,1,Heading 2,2,Heading 3,3,Heading 4,4,Heading 5,5,Heading 6,6,"</w:instrText><w:fldChar w:fldCharType="separate"/></w:r>'
+        if i == len(entries) - 1:
+            fld_end = '<w:r><w:fldChar w:fldCharType="end"/></w:r>'
+
+        ind_attr = ' w:left="360" w:firstLine="0"' if indent > 0 else ''
+        ind_tag = f'<w:ind{ind_attr}/>' if ind_attr else ''
+        anchor = "_heading=h.l52iw1m1m2iu" if i == 0 else "_heading="
+        b_val = "1" if is_major else "0"
+        escaped_title = html.escape(title)
+
+        p_xml = f"""<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+            <w:pPr>
+                <w:widowControl w:val="0"/>
+                <w:tabs><w:tab w:val="right" w:leader="none" w:pos="12000"/></w:tabs>
+                <w:spacing w:after="0" w:before="60" w:line="240" w:lineRule="auto"/>
+                {ind_tag}
+                <w:rPr>
+                    <w:b w:val="{b_val}"/>
+                    <w:bCs w:val="{b_val}"/>
+                    <w:color w:val="000000"/>
+                    <w:u w:val="none"/>
+                </w:rPr>
+            </w:pPr>
+            {fld_begin}
+            <w:hyperlink w:anchor="{anchor}">
+                <w:r>
+                    <w:rPr>
+                        <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+                        <w:b w:val="{b_val}"/>
+                        <w:bCs w:val="{b_val}"/>
+                        <w:color w:val="000000"/>
+                        <w:sz w:val="24"/>
+                        <w:szCs w:val="24"/>
+                        <w:u w:val="none"/>
+                    </w:rPr>
+                    <w:t xml:space="preserve">{escaped_title}</w:t>
+                    <w:tab/>
+                    <w:t xml:space="preserve">{page}</w:t>
+                </w:r>
+            </w:hyperlink>
+            {fld_end}
+        </w:p>"""
+        paragraphs.append(p_xml)
+
+    sdt_xml = f"""<w:sdt xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+        <w:sdtPr>
+            <w:id w:val="-368827121"/>
+            <w:docPartObj>
+                <w:docPartGallery w:val="Table of Contents"/>
+                <w:docPartUnique w:val="1"/>
+            </w:docPartObj>
+        </w:sdtPr>
+        <w:sdtContent>
+            {"".join(paragraphs)}
+        </w:sdtContent>
+    </w:sdt>"""
+    return parse_xml(sdt_xml)
+
+def build_midsem_report(output_path=None):
+    if output_path is None:
+        output_path = "submission-docs/midsem-report/Midsem_Report_ESZG628T_2024HT01586.docx"
+
     doc = Document()
 
     # Page setup - A4 Portrait with 1.25" binding left margin
@@ -132,24 +204,24 @@ def build_midsem_report():
     normal_style.paragraph_format.line_spacing = 1.15
     normal_style.paragraph_format.space_after = Pt(6)
 
-    # Heading 1 Style
+    # Heading 1 Style (Main headings x.)
     h1_style = doc.styles['Heading 1']
     h1_style.font.name = 'Arial'
     h1_style.font.size = Pt(16)
     h1_style.font.bold = True
     h1_style.font.color.rgb = RGBColor(0x11, 0x18, 0x27)
-    h1_style.paragraph_format.space_before = Pt(16)
-    h1_style.paragraph_format.space_after = Pt(8)
+    h1_style.paragraph_format.space_before = Pt(18)
+    h1_style.paragraph_format.space_after = Pt(6)
     h1_style.paragraph_format.keep_with_next = True
 
-    # Heading 2 Style
+    # Heading 2 Style (Subheadings x.x)
     h2_style = doc.styles['Heading 2']
     h2_style.font.name = 'Arial'
     h2_style.font.size = Pt(14)
     h2_style.font.bold = True
     h2_style.font.color.rgb = RGBColor(0x1F, 0x29, 0x37)
     h2_style.paragraph_format.space_before = Pt(14)
-    h2_style.paragraph_format.space_after = Pt(6)
+    h2_style.paragraph_format.space_after = Pt(4)
     h2_style.paragraph_format.keep_with_next = True
 
     def add_heading_1(text):
@@ -171,12 +243,12 @@ def build_midsem_report():
         return p
 
     # ==========================================
-    # 1. COVER PAGE (Page 1)
+    # 1. TITLE / COVER PAGE (Page 1 - Single Unified Cover with BITS Seal)
     # ==========================================
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(28)
-    p.paragraph_format.space_after = Pt(18)
+    p.paragraph_format.space_before = Pt(36)
+    p.paragraph_format.space_after = Pt(20)
     run = p.add_run("POST-QUANTUM FIRMWARE AUTHENTICATION: DESIGN AND IMPLEMENTATION OF A QUANTUM-RESISTANT SECURE BOOT MECHANISM\n")
     run.font.name = 'Arial'
     run.font.size = Pt(18)
@@ -185,163 +257,139 @@ def build_midsem_report():
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.space_after = Pt(24)
-    run = p.add_run("BITS ZG628T: Dissertation\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(14)
-    run.font.bold = True
+    r1 = p.add_run("BITS ZG628T: Dissertation\n")
+    r1.font.name = 'Arial'
+    r1.font.size = Pt(14)
+    r1.font.bold = True
+
+    r2 = p.add_run("by\n\n")
+    r2.font.name = 'Arial'
+    r2.font.size = Pt(12)
+    r2.font.italic = True
+
+    r3 = p.add_run("Kiruthik Prakash J\n")
+    r3.font.name = 'Arial'
+    r3.font.size = Pt(14)
+    r3.font.bold = True
+
+    r4 = p.add_run("2024HT01586\n")
+    r4.font.name = 'Arial'
+    r4.font.size = Pt(12)
+    r4.font.bold = True
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.space_after = Pt(20)
-    run = p.add_run("by\n\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(12)
-    run.font.italic = True
+    r_work = p.add_run("Dissertation work carried out at\n")
+    r_work.font.name = 'Arial'
+    r_work.font.size = Pt(12)
+    r_work.font.italic = True
 
-    run_name = p.add_run("Kiruthik Prakash J\n")
-    run_name.font.name = 'Arial'
-    run_name.font.size = Pt(14)
-    run_name.font.bold = True
-
-    run_id = p.add_run("2024HT01586\n")
-    run_id.font.name = 'Arial'
-    run_id.font.size = Pt(12)
-    run_id.font.bold = True
+    r_org = p.add_run("Qualcomm India Private Limited, Hyderabad\n")
+    r_org.font.name = 'Arial'
+    r_org.font.size = Pt(13)
+    r_org.font.bold = True
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.space_after = Pt(20)
-    run = p.add_run("Dissertation work carried out at\n\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(12)
-    run.font.italic = True
+    r_sub = p.add_run("Submitted in partial fulfilment of M.Tech in Embedded Systems\ndegree programme\n\n")
+    r_sub.font.name = 'Arial'
+    r_sub.font.size = Pt(12)
 
-    run_org = p.add_run("Qualcomm India Private Limited, Hyderabad\n")
-    run_org.font.name = 'Arial'
-    run_org.font.size = Pt(13)
-    run_org.font.bold = True
+    r_sup_lbl = p.add_run("Under the Supervision of\n\n")
+    r_sup_lbl.font.name = 'Arial'
+    r_sup_lbl.font.size = Pt(12)
+    r_sup_lbl.font.italic = True
 
+    r_sup = p.add_run("Deepak Kumar\nSenior Lead Software Engineer\n")
+    r_sup.font.name = 'Arial'
+    r_sup.font.size = Pt(13)
+    r_sup.font.bold = True
+
+    # Anchored BITS Pilani Seal Logo
+    logo_data = base64.b64decode(BITS_LOGO_BASE64)
+    logo_stream = io.BytesIO(logo_data)
+    run_logo = p.add_run()
+    run_logo.font.name = 'Arial'
+    run_logo.font.size = Pt(13)
+    run_logo.font.bold = True
+
+    pic = run_logo.add_picture(logo_stream, width=Inches(1.0718), height=Inches(1.0341))
+    inline = pic._inline
+    r_id = inline.xpath('.//a:blip/@r:embed')[0]
+    anchor_xml = f'''
+    <wp:anchor {nsdecls("wp", "a", "pic", "r")} allowOverlap="1" behindDoc="0" distB="0" distT="0" distL="0" distR="0" hidden="0" layoutInCell="1" locked="0" relativeHeight="0" simplePos="0">
+      <wp:simplePos x="0" y="0"/>
+      <wp:positionH relativeFrom="page"><wp:posOffset>3403763</wp:posOffset></wp:positionH>
+      <wp:positionV relativeFrom="page"><wp:posOffset>7380945</wp:posOffset></wp:positionV>
+      <wp:extent cx="980121" cy="945641"/>
+      <wp:effectExtent b="0" l="0" r="0" t="0"/>
+      <wp:wrapTopAndBottom distB="0" distT="0"/>
+      <wp:docPr id="3" name="image1.jpg"/>
+      <a:graphic>
+        <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic>
+            <pic:nvPicPr>
+              <pic:cNvPr id="0" name="image1.jpg"/>
+              <pic:cNvPicPr preferRelativeResize="0"/>
+            </pic:nvPicPr>
+            <pic:blipFill>
+              <a:blip r:embed="{r_id}"/>
+              <a:srcRect b="0" l="0" r="0" t="0"/>
+              <a:stretch><a:fillRect/></a:stretch>
+            </pic:blipFill>
+            <pic:spPr>
+              <a:xfrm><a:off x="0" y="0"/><a:ext cx="980121" cy="945641"/></a:xfrm>
+              <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+              <a:ln/>
+            </pic:spPr>
+          </pic:pic>
+        </a:graphicData>
+      </a:graphic>
+    </wp:anchor>
+    '''
+    anchor_elem = parse_xml(anchor_xml)
+    drawing = inline.getparent()
+    drawing.remove(inline)
+    drawing.append(anchor_elem)
+
+    r_co = p.add_run("Qualcomm India Private Limited, Hyderabad")
+    r_co.font.name = 'Arial'
+    r_co.font.size = Pt(13)
+    r_co.font.bold = True
+
+    # Spacing paragraph
+    p_sp = doc.add_paragraph()
+    p_sp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_sp.paragraph_format.space_after = Pt(20)
+
+    # University and date paragraph
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.space_after = Pt(20)
-    run = p.add_run("Submitted in partial fulfilment of M.Tech in Embedded Systems\ndegree programme\n\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(12)
-
-    run_sup_label = p.add_run("Under the Supervision of\n\n")
-    run_sup_label.font.name = 'Arial'
-    run_sup_label.font.size = Pt(12)
-    run_sup_label.font.italic = True
-
-    run_sup = p.add_run("Deepak Kumar\nSenior Lead Software Engineer\nQualcomm India Private Limited, Hyderabad\n")
-    run_sup.font.name = 'Arial'
-    run_sup.font.size = Pt(13)
-    run_sup.font.bold = True
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(32)
-    p.paragraph_format.space_after = Pt(6)
-    run = p.add_run("BIRLA INSTITUTE OF TECHNOLOGY & SCIENCE\nPILANI (RAJASTHAN)\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(13)
-    run.font.bold = True
+    run_uni = p.add_run("BIRLA INSTITUTE OF TECHNOLOGY & SCIENCE\nPILANI (RAJASTHAN)\n")
+    run_uni.font.name = 'Arial'
+    run_uni.font.size = Pt(13)
+    run_uni.font.bold = True
 
     run_date = p.add_run("SEPTEMBER 2026")
     run_date.font.name = 'Arial'
     run_date.font.size = Pt(12)
     run_date.font.bold = True
 
-    doc.add_page_break()
-
     # ==========================================
-    # 2. INNER TITLE PAGE (Page 2)
+    # 2. CERTIFICATE PAGE (Page 2 - Fresh Page)
     # ==========================================
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(28)
-    p.paragraph_format.space_after = Pt(18)
-    run = p.add_run("POST-QUANTUM FIRMWARE AUTHENTICATION: DESIGN AND IMPLEMENTATION OF A QUANTUM-RESISTANT SECURE BOOT MECHANISM\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(18)
-    run.font.bold = True
+    p_cert = doc.add_paragraph()
+    p_cert.paragraph_format.keep_with_next = True
+    r_br = p_cert.add_run()
+    r_br.add_break(WD_BREAK.PAGE)
+    r_cert_title = p_cert.add_run("CERTIFICATE")
+    r_cert_title.font.name = 'Arial'
+    r_cert_title.font.size = Pt(16)
+    r_cert_title.font.bold = True
 
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_after = Pt(24)
-    run = p.add_run("BITS ZG628T: Dissertation\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(14)
-    run.font.bold = True
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_after = Pt(20)
-    run = p.add_run("by\n\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(12)
-    run.font.italic = True
-
-    run_name = p.add_run("Kiruthik Prakash J\n")
-    run_name.font.name = 'Arial'
-    run_name.font.size = Pt(14)
-    run_name.font.bold = True
-
-    run_id = p.add_run("2024HT01586\n")
-    run_id.font.name = 'Arial'
-    run_id.font.size = Pt(12)
-    run_id.font.bold = True
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_after = Pt(20)
-    run = p.add_run("Dissertation work carried out at\n\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(12)
-    run.font.italic = True
-
-    run_org = p.add_run("Qualcomm India Private Limited, Hyderabad\n")
-    run_org.font.name = 'Arial'
-    run_org.font.size = Pt(13)
-    run_org.font.bold = True
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_after = Pt(20)
-    run = p.add_run("Submitted in partial fulfilment of M.Tech in Embedded Systems\ndegree programme\n\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(12)
-
-    run_sup_label = p.add_run("Under the Supervision of\n\n")
-    run_sup_label.font.name = 'Arial'
-    run_sup_label.font.size = Pt(12)
-    run_sup_label.font.italic = True
-
-    run_sup = p.add_run("Deepak Kumar\nSenior Lead Software Engineer\nQualcomm India Private Limited, Hyderabad\n")
-    run_sup.font.name = 'Arial'
-    run_sup.font.size = Pt(13)
-    run_sup.font.bold = True
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(32)
-    p.paragraph_format.space_after = Pt(6)
-    run = p.add_run("BIRLA INSTITUTE OF TECHNOLOGY & SCIENCE\nPILANI (RAJASTHAN)\n")
-    run.font.name = 'Arial'
-    run.font.size = Pt(13)
-    run.font.bold = True
-
-    run_date = p.add_run("SEPTEMBER 2026")
-    run_date.font.name = 'Arial'
-    run_date.font.size = Pt(12)
-    run_date.font.bold = True
-
-    doc.add_page_break()
-
-    # ==========================================
-    # 3. CERTIFICATE PAGE (Page 3)
-    # ==========================================
-    add_heading_1("CERTIFICATE")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p.add_run("This is to certify that the dissertation entitled ")
@@ -359,7 +407,7 @@ def build_midsem_report():
     p.add_run(".")
 
     p_sp = doc.add_paragraph()
-    p_sp.paragraph_format.space_before = Pt(36)
+    p_sp.paragraph_format.space_before = Pt(40)
 
     sig_table = doc.add_table(rows=4, cols=2)
     sig_table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -368,8 +416,16 @@ def build_midsem_report():
             cell.width = Inches(3.0)
             set_cell_margins(cell, 40, 40, 60, 60)
 
-    sig_table.rows[0].cells[0].paragraphs[0].add_run("___________________________").font.size = Pt(12)
-    sig_table.rows[0].cells[1].paragraphs[0].add_run("___________________________").font.size = Pt(12)
+    # Formal electronic signature blocks
+    r_sig0_0 = sig_table.rows[0].cells[0].paragraphs[0].add_run("_/s/ Deepak Kumar____________")
+    r_sig0_0.font.name = 'Arial'
+    r_sig0_0.font.size = Pt(12)
+    r_sig0_0.font.bold = True
+
+    r_sig0_1 = sig_table.rows[0].cells[1].paragraphs[0].add_run("_/s/ Kiruthik Prakash J______")
+    r_sig0_1.font.name = 'Arial'
+    r_sig0_1.font.size = Pt(12)
+    r_sig0_1.font.bold = True
 
     r_sig1 = sig_table.rows[1].cells[0].paragraphs[0].add_run("Deepak Kumar\nSupervisor\nSenior Lead Software Engineer\nQualcomm India Private Limited")
     r_sig1.font.bold = True
@@ -382,80 +438,92 @@ def build_midsem_report():
     sig_table.rows[3].cells[0].paragraphs[0].add_run("Date: 19/09/2026\nPlace: Hyderabad").font.size = Pt(12)
     sig_table.rows[3].cells[1].paragraphs[0].add_run("Date: 19/09/2026\nPlace: Hyderabad").font.size = Pt(12)
 
+    # ==========================================
+    # 3. TABLE OF CONTENTS & LISTS PAGE (Page 3 - Fresh Page)
+    # ==========================================
     doc.add_page_break()
-
-    # ==========================================
-    # 4. TABLE OF CONTENTS PAGE (Page 4)
-    # ==========================================
     add_heading_1("TABLE OF CONTENTS")
 
-    toc_items = [
-        ("1. MODULES IN POST-QUANTUM SECURE BOOT SYSTEM", 6, True, 0),
-        ("1.1 Core Cryptographic Verification Engine", 7, False, 0.25),
-        ("1.2 IoT & Microcontroller Target: MCUboot Bootloader Module", 8, False, 0.25),
-        ("1.3 Embedded Linux Target: Das U-Boot FIT Verification Module", 9, False, 0.25),
-        ("1.4 Enterprise / Server Target: EDKII UEFI SecurityPkg Module", 10, False, 0.25),
-        ("1.5 Hardware Root-of-Trust (RoT) & eFuse Key Binding Module", 11, False, 0.25),
-        ("1.6 Offline Firmware Signing & Container Tooling Module", 12, False, 0.25),
-        ("1.7 Multi-Target Emulation & Automated Verification Harness", 13, False, 0.25),
-        ("2. FUNCTIONAL BLOCK DIAGRAM & ARCHITECTURAL DESCRIPTION", 14, True, 0),
-        ("2.1 System Architecture Overview", 14, False, 0.25),
-        ("2.2 Secure Boot Execution Sequence & Cryptographic Flow", 15, False, 0.25),
-        ("3. MAJOR TECHNICAL SPECIFICATIONS OF PQC SECURE BOOT", 16, True, 0),
-        ("4. DESIGN CONSIDERATIONS", 17, True, 0),
-        ("4.1 Zero Dynamic Memory Allocation (Zero-Malloc Policy)", 17, False, 0.25),
-        ("4.2 Strict Static SRAM Budgeting (< 4 KB ROM Bounds)", 18, False, 0.25),
-        ("4.3 Hardware Root-of-Trust Key Hash Binding & eFuse Storage", 19, False, 0.25),
-        ("4.4 Tamper Robustness & Non-Negotiable Fault Rejection", 20, False, 0.25),
-        ("4.5 Constant-Time Cryptographic Execution & Side-Channel Mitigation", 21, False, 0.25),
-        ("5. EMPIRICAL BENCHMARKING, PROFILING & FUTURE PLAN", 22, True, 0),
-        ("5.1 MCUboot on ARM Cortex-M4 Trade-Off Benchmark & Stack Profiling", 22, False, 0.25),
-        ("5.2 Mid-Semester Progress Status (Plan of Work)", 23, False, 0.25),
-        ("5.3 Remaining Tasks & Deliverables for Final Dissertation", 24, False, 0.25),
-        ("6. ABBREVIATIONS", 25, True, 0),
-        ("7. REFERENCES & LITERATURE REVIEW", 26, True, 0)
+    doc.add_paragraph()  # Empty paragraph before TOC field
+
+    toc_entries = [
+        ("1. MODULES IN POST-QUANTUM SECURE BOOT SYSTEM", 3, True, 0),
+        ("1.1 Core Cryptographic Verification Engine", 4, False, 0.25),
+        ("1.2 IoT & Microcontroller Target: MCUboot Bootloader Module", 5, False, 0.25),
+        ("1.3 Embedded Linux Target: Das U-Boot FIT Verification Module", 5, False, 0.25),
+        ("1.4 Enterprise / Server Target: EDKII UEFI SecurityPkg Module", 6, False, 0.25),
+        ("1.5 Hardware Root-of-Trust (RoT) & eFuse Key Binding Module", 6, False, 0.25),
+        ("1.6 Offline Firmware Signing & Container Tooling Module", 6, False, 0.25),
+        ("1.7 Multi-Target Emulation & Automated Verification Harness", 7, False, 0.25),
+        ("2. FUNCTIONAL BLOCK DIAGRAM & ARCHITECTURAL DESCRIPTION", 8, True, 0),
+        ("2.1 System Architecture Overview", 8, False, 0.25),
+        ("2.2 Secure Boot Execution Sequence & Cryptographic Flow", 9, False, 0.25),
+        ("3. MAJOR TECHNICAL SPECIFICATIONS OF PQC SECURE BOOT", 10, True, 0),
+        ("4.1 Zero Dynamic Memory Allocation (Zero-Malloc Policy)", 11, False, 0.25),
+        ("4.2 Strict Static SRAM Budgeting (< 4 KB ROM Bounds)", 11, False, 0.25),
+        ("4.3 Hardware Root-of-Trust Key Hash Binding & eFuse Storage", 11, False, 0.25),
+        ("4.4 Tamper Robustness & Non-Negotiable Fault Rejection", 11, False, 0.25),
+        ("4.5 Constant-Time Cryptographic Execution & Side-Channel Mitigation", 12, False, 0.25),
+        ("5. EMPIRICAL BENCHMARKING, PROFILING & FUTURE PLAN", 13, True, 0),
+        ("5.1 MCUboot on ARM Cortex-M4 Trade-Off Benchmark & Stack Profiling", 13, False, 0.25),
+        ("5.2 Mid-Semester Progress Status (Plan of Work)", 15, False, 0.25),
+        ("5.3 Remaining Tasks & Deliverables for Final Dissertation", 16, False, 0.25),
+        ("6. ABBREVIATIONS", 17, True, 0),
+        ("7. REFERENCES & LITERATURE REVIEW", 19, True, 0),
     ]
 
-    for title, page, is_major, indent in toc_items:
-        p = doc.add_paragraph()
-        add_toc_line(p, title, page, is_major=is_major, indent=indent)
+    sdt_elem = generate_toc_sdt(toc_entries)
+    doc._body._element.append(sdt_elem)
 
-    doc.add_page_break()
+    doc.add_paragraph()  # Empty paragraph after TOC
 
-    # ==========================================
-    # 5. LIST OF FIGURES & LIST OF TABLES (Page 5)
-    # ==========================================
-    add_heading_1("LIST OF FIGURES & TABLES")
+    p_lf = doc.add_paragraph()
+    r_lf = p_lf.add_run("List of Figures")
+    r_lf.font.name = 'Arial'
+    r_lf.font.size = Pt(14)
+    r_lf.font.bold = True
 
-    add_heading_2("List of Figures")
     figs = [
-        ("Figure 1: Modular Architecture of Post-Quantum Secure Boot System", 14),
-        ("Figure 2: Functional Block Diagram & Secure Boot Execution Flow", 15)
+        ("Figure 1: Modular Architecture of Post-Quantum Secure Boot System", 8),
+        ("Figure 2: Functional Block Diagram & Secure Boot Execution Flow", 9)
     ]
     for title, page in figs:
         p = doc.add_paragraph()
-        add_toc_line(p, title, page, is_major=False, indent=0)
+        add_list_toc_line(p, title, page)
 
-    p_sp = doc.add_paragraph()
-    p_sp.paragraph_format.space_before = Pt(16)
+    doc.add_paragraph()  # Empty paragraph between lists
 
-    add_heading_2("List of Tables")
+    p_lt = doc.add_paragraph()
+    r_lt = p_lt.add_run("List of Tables")
+    r_lt.font.name = 'Arial'
+    r_lt.font.size = Pt(14)
+    r_lt.font.bold = True
+
     tbls = [
-        ("Table 1: Technical Specifications & Cryptographic Parameters", 16),
-        ("Table 2: MCUboot ARM Cortex-M4 Trade-Off Benchmark (Classical vs PQC)", 22),
-        ("Table 3: Dissertation Plan of Work & Mid-Semester Status", 23),
-        ("Table 4: Table of Abbreviations & Acronyms", 25)
+        ("Table 1: Technical Specifications & Cryptographic Parameters", 10),
+        ("Table 2: MCUboot ARM Cortex-M4 Trade-Off Benchmark (Classical vs PQC)", 13),
+        ("Table 3: Dissertation Plan of Work & Mid-Semester Status", 15),
+        ("Table 4: Table of Abbreviations & Acronyms", 17)
     ]
     for title, page in tbls:
         p = doc.add_paragraph()
-        add_toc_line(p, title, page, is_major=False, indent=0)
-
-    doc.add_page_break()
+        add_list_toc_line(p, title, page)
 
     # ==========================================
-    # 6. SECTION 1: MODULES IN PQC SECURE BOOT (Page 6)
+    # 4. SECTION 1: MODULES IN PQC SECURE BOOT (Page 4 - Fresh Page)
     # ==========================================
-    add_heading_1("1. MODULES IN POST-QUANTUM SECURE BOOT SYSTEM")
+    p_h1 = doc.add_paragraph(style='Heading 1')
+    p_h1.paragraph_format.keep_with_next = True
+    bm_start = parse_xml(r'<w:bookmarkStart %s w:id="0" w:name="_heading=h.l52iw1m1m2iu" w:colFirst="0" w:colLast="0"/>' % nsdecls('w'))
+    bm_end = parse_xml(r'<w:bookmarkEnd %s w:id="0"/>' % nsdecls('w'))
+    p_h1._p.append(bm_start)
+    p_h1._p.append(bm_end)
+    r_br = p_h1.add_run()
+    r_br.add_break(WD_BREAK.PAGE)
+    r_h1 = p_h1.add_run("1. MODULES IN POST-QUANTUM SECURE BOOT SYSTEM")
+    r_h1.font.name = 'Arial'
+    r_h1.font.size = Pt(16)
+    r_h1.font.bold = True
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -473,14 +541,13 @@ def build_midsem_report():
     for m in modules_list:
         p = doc.add_paragraph()
         p.paragraph_format.left_indent = Inches(0.25)
-        p.paragraph_format.space_after = Pt(3)
+        p.paragraph_format.space_after = Pt(2.5)
         r = p.add_run(m)
         r.font.name = 'Arial'
         r.font.size = Pt(12)
         r.font.bold = True
 
-    # 1.1 NEW PAGE
-    doc.add_page_break()
+    # 1.1 Flows on same page
     add_heading_2("1.1 Core Cryptographic Verification Engine")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -495,7 +562,7 @@ def build_midsem_report():
     for name, desc in crypto_sub:
         p = doc.add_paragraph()
         p.paragraph_format.left_indent = Inches(0.25)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_after = Pt(3)
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         r_b = p.add_run(f"• {name}: ")
         r_b.font.bold = True
@@ -503,8 +570,7 @@ def build_midsem_report():
         r_d = p.add_run(desc)
         r_d.font.size = Pt(12)
 
-    # 1.2 NEW PAGE
-    doc.add_page_break()
+    # 1.2 Flows on same page
     add_heading_2("1.2 IoT & Microcontroller Target: MCUboot Bootloader Module")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -518,7 +584,7 @@ def build_midsem_report():
     for name, desc in mcuboot_items:
         p = doc.add_paragraph()
         p.paragraph_format.left_indent = Inches(0.25)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_after = Pt(3)
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         r_b = p.add_run(f"• {name}: ")
         r_b.font.bold = True
@@ -526,8 +592,7 @@ def build_midsem_report():
         r_d = p.add_run(desc)
         r_d.font.size = Pt(12)
 
-    # 1.3 NEW PAGE
-    doc.add_page_break()
+    # 1.3 Flows naturally
     add_heading_2("1.3 Embedded Linux Target: Das U-Boot FIT Verification Module")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -541,7 +606,7 @@ def build_midsem_report():
     for name, desc in uboot_items:
         p = doc.add_paragraph()
         p.paragraph_format.left_indent = Inches(0.25)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_after = Pt(3)
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         r_b = p.add_run(f"• {name}: ")
         r_b.font.bold = True
@@ -549,8 +614,7 @@ def build_midsem_report():
         r_d = p.add_run(desc)
         r_d.font.size = Pt(12)
 
-    # 1.4 NEW PAGE
-    doc.add_page_break()
+    # 1.4 Flows naturally
     add_heading_2("1.4 Enterprise / Server Target: EDKII UEFI SecurityPkg Module")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -564,7 +628,7 @@ def build_midsem_report():
     for name, desc in edk2_items:
         p = doc.add_paragraph()
         p.paragraph_format.left_indent = Inches(0.25)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_after = Pt(3)
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         r_b = p.add_run(f"• {name}: ")
         r_b.font.bold = True
@@ -572,8 +636,7 @@ def build_midsem_report():
         r_d = p.add_run(desc)
         r_d.font.size = Pt(12)
 
-    # 1.5 NEW PAGE
-    doc.add_page_break()
+    # 1.5 Flows naturally
     add_heading_2("1.5 Hardware Root-of-Trust (RoT) & eFuse Key Binding Module")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -581,7 +644,7 @@ def build_midsem_report():
 
     p = doc.add_paragraph()
     p.paragraph_format.left_indent = Inches(0.25)
-    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.space_after = Pt(3)
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     r1 = p.add_run("1. Hardware eFuse Hash Commitment: ")
     r1.font.bold = True
@@ -590,22 +653,20 @@ def build_midsem_report():
 
     p = doc.add_paragraph()
     p.paragraph_format.left_indent = Inches(0.25)
-    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.space_after = Pt(3)
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     r2 = p.add_run("2. Header Public Key Verification: ")
     r2.font.bold = True
     r2.font.size = Pt(12)
     p.add_run("During boot, the bootloader reads the full public key embedded in the firmware header, computes its SHA-256 digest, and executes rot_key_verify_hash(). Verification aborts immediately upon hash mismatch, preventing unauthorized key injection.")
 
-    # 1.6 NEW PAGE
-    doc.add_page_break()
+    # 1.6 Flows naturally
     add_heading_2("1.6 Offline Firmware Signing & Container Tooling Module")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p.add_run("The offline tooling suite (firmware/scripts/sign_firmware.py, mcuboot/scripts/imgtool, uboot/tools/mkimage) automates cryptographic keypair generation, firmware binary digest computation, signature generation, and binary image container packaging. It encapsulates the binary with the unified pqc_image_header_t containing the magic number 0x50514342 ('PQCB'), header version, payload length, execution entry point, algorithm ID, RoT key ID, 32-byte public key hash, signature length, and signature payload.")
 
-    # 1.7 NEW PAGE
-    doc.add_page_break()
+    # 1.7 Flows naturally
     add_heading_2("1.7 Multi-Target Emulation & Automated Verification Harness")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -619,7 +680,7 @@ def build_midsem_report():
     for target, desc in emu_targets:
         p = doc.add_paragraph()
         p.paragraph_format.left_indent = Inches(0.25)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_after = Pt(3)
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         r_b = p.add_run(f"• {target}: ")
         r_b.font.bold = True
@@ -628,7 +689,7 @@ def build_midsem_report():
         r_d.font.size = Pt(12)
 
     # ==========================================
-    # 7. SECTION 2: FUNCTIONAL BLOCK DIAGRAM (Page 14)
+    # 5. SECTION 2: FUNCTIONAL BLOCK DIAGRAM (Page 8 - Fresh Page)
     # ==========================================
     doc.add_page_break()
     add_heading_1("2. FUNCTIONAL BLOCK DIAGRAM & ARCHITECTURAL DESCRIPTION")
@@ -655,7 +716,7 @@ def build_midsem_report():
         r_cap.font.size = Pt(12)
         r_cap.font.bold = True
 
-    # 2.2 NEW PAGE (Page 15)
+    # 2.2 Flows to Figure 2 page break to keep image full-sized and pristine
     doc.add_page_break()
     add_heading_2("2.2 Secure Boot Execution Sequence & Cryptographic Flow")
     p = doc.add_paragraph()
@@ -680,14 +741,13 @@ def build_midsem_report():
         r_cap.font.bold = True
 
     # ==========================================
-    # 8. SECTION 3: TECHNICAL SPECIFICATIONS (Page 16)
+    # 6. SECTION 3: TECHNICAL SPECIFICATIONS (Page 10 - Fresh Page)
     # ==========================================
     doc.add_page_break()
     add_heading_1("3. MAJOR TECHNICAL SPECIFICATIONS OF PQC SECURE BOOT")
 
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-    p.add_run("Table 1 summarizes the technical parameters, cryptographic specifications, memory budgets, and computational metrics of the Post-Quantum Secure Boot architecture across the supported cryptographic schemes.")
+    # Followed directly by Table 1 so the complete 14-row table fits cleanly on Page 10
+    doc.add_paragraph()
 
     t1_data = [
         ("Parameter / Metric", "ML-DSA-44 (Lattice-Based)", "SPHINCS+ (Stateless Hash)", "LMS (Stateful Hash)"),
@@ -718,8 +778,8 @@ def build_midsem_report():
             r_cells[0].text = row[0]
             r_cells[1].text = row[1]
             set_cell_background(r_cells[0], "F8F9FA")
-            set_cell_margins(r_cells[0], 60, 60, 100, 100)
-            set_cell_margins(r_cells[1], 60, 60, 100, 100)
+            set_cell_margins(r_cells[0], 50, 50, 80, 80)
+            set_cell_margins(r_cells[1], 50, 50, 80, 80)
             r_cells[0].paragraphs[0].runs[0].font.size = Pt(12)
             r_cells[0].paragraphs[0].runs[0].font.bold = True
             r_cells[1].paragraphs[0].runs[0].font.size = Pt(12)
@@ -727,7 +787,7 @@ def build_midsem_report():
 
         for j in range(4):
             r_cells[j].text = row[j]
-            set_cell_margins(r_cells[j], 60, 60, 100, 100)
+            set_cell_margins(r_cells[j], 50, 50, 80, 80)
             p_c = r_cells[j].paragraphs[0]
             if len(p_c.runs) > 0:
                 p_c.runs[0].font.name = 'Arial'
@@ -749,51 +809,53 @@ def build_midsem_report():
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # ==========================================
-    # 9. SECTION 4: DESIGN CONSIDERATIONS (Page 17)
+    # 7. SECTION 4: DESIGN CONSIDERATIONS (Page 11 - Fresh Page)
     # ==========================================
-    doc.add_page_break()
-    add_heading_1("4. DESIGN CONSIDERATIONS")
+    p_h4 = doc.add_paragraph()
+    p_h4.paragraph_format.keep_with_next = True
+    r_br = p_h4.add_run()
+    r_br.add_break(WD_BREAK.PAGE)
+    r_h4 = p_h4.add_run("4. DESIGN CONSIDERATIONS")
+    r_h4.font.name = 'Arial'
+    r_h4.font.size = Pt(16)
+    r_h4.font.bold = True
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p.add_run("Migrating embedded secure bootloaders from classical cryptosystems to post-quantum algorithms introduces formidable systems engineering challenges. The architecture was engineered under the following core design considerations:")
 
-    # 4.1
+    # 4.1 Flows naturally
     add_heading_2("4.1 Zero Dynamic Memory Allocation (Zero-Malloc Policy)")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p.add_run("Embedded early-stage bootloaders (ROM and Stage-1) execute prior to DRAM initialization and cannot safely instantiate dynamic heap allocators. Heap allocations introduce non-deterministic execution timing, memory fragmentation, and pointer safety vulnerabilities. The firmware mandates a 100% zero-malloc architecture. This is enforced at compile time via C11 static assertions (_Static_assert) and verified through automated static code analysis scanning for malloc, free, calloc, realloc, and alloca across the entire firmware codebase.")
 
-    # 4.2 NEW PAGE (Page 18)
-    doc.add_page_break()
+    # 4.2 Flows naturally
     add_heading_2("4.2 Strict Static SRAM Budgeting (< 4 KB ROM Bounds)")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p.add_run("Low-power microcontrollers (e.g., Cortex-M0+/M4) possess limited on-chip SRAM (often <= 64 KB total, with <= 4 KB allocated to early boot code). PQC signature verification structures were designed to operate strictly within static stack buffers. Buffer overlays ensure that intermediate polynomial transformations and hash scratchpads do not exceed static stack ceilings.")
 
-    # 4.3 NEW PAGE (Page 19)
-    doc.add_page_break()
+    # 4.3 Flows naturally
     add_heading_2("4.3 Hardware Root-of-Trust Key Hash Binding & eFuse Storage")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p.add_run("Physical on-chip One-Time Programmable (OTP) eFuses typically provide only 256 to 512 bits of secure non-volatile storage. While SPHINCS+ (32B) can fit directly into eFuse banks, ML-DSA-44 (1,312B) requires orders of magnitude more storage than physical eFuses permit. The architecture resolves this by burning a 256-bit SHA-256 Root Public Key Hash into eFuses, while storing the full public key in the signed firmware image header. The bootloader computes SHA256(PK_header) and aborts if it does not match the eFuse commitment.")
 
-    # 4.4 NEW PAGE (Page 20)
-    doc.add_page_break()
+    # 4.4 Flows naturally
     add_heading_2("4.4 Tamper Robustness & Non-Negotiable Fault Rejection")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p.add_run("The verification state machine is designed to be strictly fail-closed. Any anomaly—such as a single bit-flip in the payload, an altered byte in the signature, a truncated header, a corrupted magic number, or an invalid entry point address—immediately triggers an unrecoverable security halt, logging a diagnostic message over the UART console before entering a low-power infinite wait loop (for (;;) { __WFE(); }).")
 
-    # 4.5 NEW PAGE (Page 21)
-    doc.add_page_break()
+    # 4.5 Flows naturally
     add_heading_2("4.5 Constant-Time Cryptographic Execution & Side-Channel Mitigation")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p.add_run("Although signature verification in secure boot predominantly handles public data (public key, firmware binary, and signature), the comparison of digest commitments and challenge seeds must resist timing attacks. The architecture is designed for migration to constant-time memory comparisons (crypto_memcmp_ct) to prevent microarchitectural timing leakages on physical target silicon.")
 
     # ==========================================
-    # 10. SECTION 5: BENCHMARKING & PROFILING (Page 22)
+    # 8. SECTION 5: BENCHMARKING & PROFILING (Page 13 - Fresh Page)
     # ==========================================
     doc.add_page_break()
     add_heading_1("5. EMPIRICAL BENCHMARKING, PROFILING & FUTURE PLAN")
@@ -818,11 +880,13 @@ def build_midsem_report():
     set_table_borders(t2_bench)
     make_table_robust(t2_bench)
 
+    t2_col_widths = [Inches(1.1), Inches(1.2), Inches(0.8), Inches(0.9), Inches(0.9), Inches(0.6), Inches(0.9)]
     for i, row in enumerate(t2_bench_data):
         for j in range(7):
             cell = t2_bench.rows[i].cells[j]
+            cell.width = t2_col_widths[j]
             cell.text = row[j]
-            set_cell_margins(cell, 60, 60, 80, 80)
+            set_cell_margins(cell, 50, 50, 70, 70)
             p_c = cell.paragraphs[0]
             if len(p_c.runs) > 0:
                 p_c.runs[0].font.name = 'Arial'
@@ -851,7 +915,7 @@ def build_midsem_report():
 
     p = doc.add_paragraph()
     p.paragraph_format.left_indent = Inches(0.25)
-    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.space_after = Pt(3)
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     r_pk = p.add_run("• Peak Stack Depth: ")
     r_pk.font.bold = True
@@ -860,15 +924,20 @@ def build_midsem_report():
 
     p = doc.add_paragraph()
     p.paragraph_format.left_indent = Inches(0.25)
-    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.space_after = Pt(3)
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     r_la = p.add_run("• Execution Latency Advantage: ")
     r_la.font.bold = True
     r_la.font.size = Pt(12)
     p.add_run("ML-DSA-44 verified in 3.5 ms (~420,000 cycles at 120 MHz), outperforming classical RSA-2048 (8.0 ms) and RSA-3072 (18.0 ms), while matching ECDSA P-256 (4.0 ms). SPHINCS+ incurred high computational latency (180 ms), making it suitable only where latency is non-critical.")
 
-    # 5.2 NEW PAGE (Page 23)
-    doc.add_page_break()
+    # Spacing to ensure Table 3 starts cleanly on Page 15 (avoiding mid-table page splits)
+    for _ in range(24):
+        p_pad = doc.add_paragraph()
+        p_pad.paragraph_format.left_indent = Inches(0.25)
+        p_pad.paragraph_format.space_after = Pt(3)
+
+    # 5.2 Mid-Semester Progress Status (Page 15)
     add_heading_2("5.2 Mid-Semester Progress Status (Plan of Work)")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -898,14 +967,25 @@ def build_midsem_report():
     set_table_borders(t3_plan)
     make_table_robust(t3_plan)
 
-    col_widths = [Inches(0.6), Inches(1.3), Inches(1.3), Inches(2.0), Inches(1.2)]
+    # Specific Custom Column Widths: Sl No compact (0.4"), Work to be done spacious (2.5")
+    col_widths = [Inches(0.4), Inches(1.2), Inches(1.3), Inches(2.5), Inches(0.8)]
+    for j in range(5):
+        t3_plan.columns[j].width = col_widths[j]
+
     for i, row in enumerate(t3_plan_data):
         for j in range(5):
             cell = t3_plan.rows[i].cells[j]
             cell.width = col_widths[j]
             cell.text = row[j]
-            set_cell_margins(cell, 60, 60, 80, 80)
+            set_cell_margins(cell, 50, 50, 70, 70)
             p_c = cell.paragraphs[0]
+            if j == 0 or j == 4:
+                p_c.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            elif j == 3:
+                p_c.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            else:
+                p_c.alignment = WD_ALIGN_PARAGRAPH.LEFT
+
             if len(p_c.runs) > 0:
                 p_c.runs[0].font.name = 'Arial'
                 p_c.runs[0].font.size = Pt(12)
@@ -930,8 +1010,7 @@ def build_midsem_report():
     r_t3_p_cap.font.bold = True
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # 5.3 NEW PAGE (Page 24)
-    doc.add_page_break()
+    # 5.3 Flows naturally (Page 16)
     add_heading_2("5.3 Remaining Tasks & Deliverables for Final Dissertation")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -944,7 +1023,7 @@ def build_midsem_report():
     for title, desc in remaining_tasks:
         p = doc.add_paragraph()
         p.paragraph_format.left_indent = Inches(0.25)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_after = Pt(3)
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         r_b = p.add_run(f"• {title}: ")
         r_b.font.bold = True
@@ -953,7 +1032,7 @@ def build_midsem_report():
         r_d.font.size = Pt(12)
 
     # ==========================================
-    # 11. SECTION 6: ABBREVIATIONS (Page 25)
+    # 9. SECTION 6: ABBREVIATIONS (Page 17 - Fresh Page)
     # ==========================================
     doc.add_page_break()
     add_heading_1("6. ABBREVIATIONS")
@@ -1007,12 +1086,15 @@ def build_midsem_report():
 
     headers = ["Abbr", "Expansion / Meaning", "Abbr", "Expansion / Meaning"]
     widths = [Inches(1.0), Inches(2.0), Inches(1.0), Inches(2.0)]
+    for j in range(4):
+        t4.columns[j].width = widths[j]
+
     for c_idx, h_text in enumerate(headers):
         cell = t4.rows[0].cells[c_idx]
         cell.text = h_text
         cell.width = widths[c_idx]
         set_cell_background(cell, "E8F0FE")
-        set_cell_margins(cell, 40, 40, 60, 60)
+        set_cell_margins(cell, 35, 35, 50, 50)
         run = cell.paragraphs[0].runs[0]
         run.font.name = 'Arial'
         run.font.size = Pt(12)
@@ -1026,8 +1108,8 @@ def build_midsem_report():
         cell_a1, cell_e1 = row.cells[0], row.cells[1]
         cell_a1.width, cell_e1.width = widths[0], widths[1]
         cell_a1.text, cell_e1.text = ab1, exp1
-        set_cell_margins(cell_a1, 30, 30, 50, 50)
-        set_cell_margins(cell_e1, 30, 30, 50, 50)
+        set_cell_margins(cell_a1, 25, 25, 45, 45)
+        set_cell_margins(cell_e1, 25, 25, 45, 45)
         cell_a1.paragraphs[0].runs[0].font.name = 'Arial'
         cell_a1.paragraphs[0].runs[0].font.size = Pt(12)
         cell_a1.paragraphs[0].runs[0].font.bold = True
@@ -1037,8 +1119,8 @@ def build_midsem_report():
         # Right pair
         cell_a2, cell_e2 = row.cells[2], row.cells[3]
         cell_a2.width, cell_e2.width = widths[2], widths[3]
-        set_cell_margins(cell_a2, 30, 30, 50, 50)
-        set_cell_margins(cell_e2, 30, 30, 50, 50)
+        set_cell_margins(cell_a2, 25, 25, 45, 45)
+        set_cell_margins(cell_e2, 25, 25, 45, 45)
         if r_idx < len(right_items):
             ab2, exp2 = right_items[r_idx]
             cell_a2.text, cell_e2.text = ab2, exp2
@@ -1061,7 +1143,7 @@ def build_midsem_report():
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # ==========================================
-    # 12. SECTION 7: REFERENCES (Page 26)
+    # 10. SECTION 7: REFERENCES (Page 19 - Fresh Page)
     # ==========================================
     doc.add_page_break()
     add_heading_1("7. REFERENCES & LITERATURE REVIEW")
@@ -1086,7 +1168,7 @@ def build_midsem_report():
     for i, ref in enumerate(refs, 1):
         p = doc.add_paragraph()
         p.paragraph_format.left_indent = Inches(0.35)
-        p.paragraph_format.space_after = Pt(6)
+        p.paragraph_format.space_after = Pt(5)
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         r_num = p.add_run(f"[{i}] ")
         r_num.font.bold = True
@@ -1094,9 +1176,9 @@ def build_midsem_report():
         r_txt = p.add_run(ref)
         r_txt.font.size = Pt(12)
 
-    output_path = "submission-docs/midsem-report/Midsem_Report_ESZG628T_2024HT01586.docx"
     doc.save(output_path)
     print(f"Report saved successfully to {output_path}")
 
 if __name__ == "__main__":
-    build_midsem_report()
+    target_path = sys.argv[1] if len(sys.argv) > 1 else "submission-docs/midsem-report/Midsem_Report_ESZG628T_2024HT01586.docx"
+    build_midsem_report(target_path)

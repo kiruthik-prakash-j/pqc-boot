@@ -210,7 +210,6 @@ As per the approved Dissertation Plan of Work, the project timeline spans five d
 ### 5.3 Remaining Tasks & Deliverables for Final Dissertation
 With the core C verification engine, container formats, bootloader integrations, and MCUboot trade-off benchmarks successfully completed ahead of schedule, the remaining work for the final dissertation focuses on:
 - **Multi-Target Profiling (U-Boot RISC-V 64 & UEFI Cortex-A57)**: Extend empirical benchmarking and hardware cycle counter measurements to Das U-Boot on RISC-V 64-bit and EDKII / UEFI SecurityPkg on ARM Cortex-A57 SMP, profiling multi-core DXE handoff latency.
-- **Side-Channel & Fault Injection Hardening**: Expand formal power-analysis countermeasures, constant-time Montgomery ladder verifications, and redundant double-check branch barriers against hardware glitching.
 
 ---
 
