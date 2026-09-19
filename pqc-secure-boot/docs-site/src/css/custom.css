@@ -1,0 +1,171 @@
+/**
+ * Custom CSS for PQC Secure Boot Documentation Site
+ */
+
+:root {
+  --ifm-color-primary: #0076ce;
+  --ifm-color-primary-dark: #006ab9;
+  --ifm-color-primary-darker: #0064af;
+  --ifm-color-primary-darkest: #005390;
+  --ifm-color-primary-light: #0082e3;
+  --ifm-color-primary-lighter: #0088ed;
+  --ifm-color-primary-lightest: #1a94ff;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #38bdf8;
+  --ifm-color-primary-dark: #1dafec;
+  --ifm-color-primary-darker: #0fa6e7;
+  --ifm-color-primary-darkest: #0b84b9;
+  --ifm-color-primary-light: #53c5f9;
+  --ifm-color-primary-lighter: #60caf9;
+  --ifm-color-primary-lightest: #8ad8fa;
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.1);
+}
+
+.hero--primary {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f766e 100%);
+  color: #ffffff;
+}
+
+/* Playground Styling */
+.pqc-playground-container {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 20px;
+  margin-bottom: 30px;
+  background-color: var(--ifm-card-background-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.pqc-playground-header {
+  border-bottom: 2px solid var(--ifm-color-primary);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.pqc-control-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  background-color: var(--ifm-background-surface-color);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.pqc-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pqc-control-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pqc-select, .pqc-toggle {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--ifm-color-emphasis-400);
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  font-size: 0.95rem;
+}
+
+.pqc-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.pqc-btn-simulate {
+  background-color: var(--ifm-color-primary);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  margin-top: 8px;
+}
+
+.pqc-btn-simulate:hover {
+  background-color: var(--ifm-color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.pqc-pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.pqc-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background-color: var(--ifm-background-surface-color);
+  transition: all 0.3s ease;
+}
+
+.pqc-step.pending {
+  border-left: 6px solid var(--ifm-color-emphasis-400);
+  opacity: 0.7;
+}
+
+.pqc-step.running {
+  border-left: 6px solid #f59e0b;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.pqc-step.passed {
+  border-left: 6px solid #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.pqc-step.failed {
+  border-left: 6px solid #ef4444;
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.pqc-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.pqc-metric-card {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  background-color: var(--ifm-background-surface-color);
+  text-align: center;
+}
+
+.pqc-metric-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--ifm-color-primary);
+  margin-top: 4px;
+}
+
+.pqc-metric-label {
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-700);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

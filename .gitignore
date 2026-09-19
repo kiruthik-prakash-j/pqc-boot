@@ -1,0 +1,63 @@
+# Node.js / Docusaurus
+node_modules/
+.docusaurus/
+build/
+dist/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+
+# C / C++ & Firmware build artifacts
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+pqc-secure-boot/firmware/build/
+*.o
+*.obj
+*.gch
+*.d
+*.a
+*.so
+*.dylib
+*.dll
+*.mod
+*.mod.c
+
+# Test binaries & temporary files
+pqc-secure-boot/real_world/uboot/test_pqc_fit_verify
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+/.agents/
