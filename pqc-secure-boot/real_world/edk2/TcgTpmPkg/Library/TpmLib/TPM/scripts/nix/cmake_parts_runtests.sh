@@ -1,1 +1,0 @@
-ctest --test-dir build/parts/Debug_Ossl_Win32/tpm_tests

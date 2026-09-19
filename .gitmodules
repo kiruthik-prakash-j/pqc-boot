@@ -1,0 +1,12 @@
+[submodule "pqc-secure-boot/real_world/mcuboot"]
+	path = pqc-secure-boot/real_world/mcuboot
+	url = https://github.com/kiruthik-prakash-j/mcuboot.git
+	branch = pqc-secure-boot
+[submodule "pqc-secure-boot/real_world/uboot"]
+	path = pqc-secure-boot/real_world/uboot
+	url = https://github.com/kiruthik-prakash-j/u-boot.git
+	branch = pqc-secure-boot
+[submodule "pqc-secure-boot/real_world/edk2"]
+	path = pqc-secure-boot/real_world/edk2
+	url = https://github.com/kiruthik-prakash-j/edk2.git
+	branch = pqc-secure-boot
