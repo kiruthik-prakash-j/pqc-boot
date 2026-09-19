@@ -1,0 +1,41 @@
+{
+  "name": "PQC Secure Boot Development & QEMU Emulation",
+  "image": "mcr.microsoft.com/devcontainers/universal:2-linux",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11",
+      "installTools": true
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.defaultInterpreterPath": "/usr/local/bin/python3",
+        "files.associations": {
+          "*.its": "dts",
+          "*.dts": "dts",
+          "*.dtsi": "dts"
+        }
+      },
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-python.python",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "PQC Docusaurus Docs & Playgrounds",
+      "onAutoForward": "notify"
+    }
+  }
+}

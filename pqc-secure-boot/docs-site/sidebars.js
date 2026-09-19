@@ -44,6 +44,7 @@ const sidebars = {
       label: '04. Master Tutorials',
       items: [
         'tutorials/qemu-master-tutorial',
+        'tutorials/codespaces-and-profiling-guide',
       ],
     },
     {

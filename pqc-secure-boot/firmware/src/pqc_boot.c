@@ -79,15 +79,15 @@ pqc_boot_status_t pqc_boot_verify_and_boot(const uint8_t *signed_image_buffer, s
     platform_uart_puts("[PQC-BOOT] Booting payload...\r\n");
 
     /* Execution handoff to entry point or function payload */
+#if defined(__x86_64__) || defined(_M_X64)
+    platform_uart_puts("[PQC-BOOT] Host execution: Image authenticated successfully. Handoff to stage-1 simulated.\r\n");
+#else
     if (hdr->entry_point != 0 && hdr->entry_point != 0x80000000U) {
-        /* Only call entry point if it points into executable text region */
-        uintptr_t ep = (uintptr_t)hdr->entry_point;
-        if (ep > 0x10000 && ep < 0x7FFFFFFFFFFF) {
-            typedef void (*entry_func_t)(void);
-            entry_func_t entry = (entry_func_t)ep;
-            entry();
-        }
+        typedef void (*entry_func_t)(void);
+        entry_func_t entry = (entry_func_t)(uintptr_t)hdr->entry_point;
+        entry();
     }
+#endif
 
     return PQC_BOOT_SUCCESS;
 }
